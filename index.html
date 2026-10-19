@@ -1,423 +1,565 @@
+
 <!DOCTYPE html>
 <html lang="id">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Checklist & Monitoring Sholat 5 Waktu</title>
-    <!-- Tailwind CSS CDN -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Firebase SDKs -->
-    <script type="module">
-      import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-      import {
-        getAuth,
-        createUserWithEmailAndPassword,
-        signInWithEmailAndPassword,
-        signOut,
-        onAuthStateChanged,
-        updateProfile,
-      } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-      import {
-        getFirestore,
-        doc,
-        setDoc,
-        getDoc,
-        collection,
-        query,
-        where,
-        getDocs,
-      } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#0b3028">
+<title>Sajdah — Daily Prayer</title>
+<style>
+:root {
+  --bg:#f4f6ef;
+  --card:#ffffff;
+  --green:#0b3028;
+  --green2:#145746;
+  --mint:#dcefe4;
+  --gold:#d9b66f;
+  --muted:#829087;
+  --border:#e6ebe5;
+  --radius:22px;
+}
+*{box-sizing:border-box}
+body{
+  margin:0;background:var(--bg);color:var(--green);
+  font-family:Inter,system-ui,-apple-system,sans-serif;
+}
+button,input{font:inherit}
+button{cursor:pointer}
+.hidden{display:none!important}
+.app{max-width:1120px;margin:auto;padding:24px}
+.topbar{
+  display:flex;justify-content:space-between;align-items:center;
+  gap:16px;margin-bottom:28px;
+}
+.brand{display:flex;align-items:center;gap:12px}
+.logo{
+  background:var(--green);color:white;width:46px;height:46px;
+  border-radius:16px;display:grid;place-items:center;font-size:24px;
+}
+.brand h1{font-size:21px;margin:0}
+.brand p{margin:3px 0;color:var(--muted);font-size:12px}
+.user-pill{
+  background:white;border:1px solid var(--border);
+  border-radius:30px;padding:9px 14px;font-size:13px;
+}
+.hero{
+  background:linear-gradient(120deg,#0b3028,#17634b);
+  color:white;border-radius:30px;padding:30px;
+  display:grid;grid-template-columns:1.5fr 1fr;
+  gap:24px;position:relative;overflow:hidden;
+  box-shadow:0 16px 40px #0b30281c;
+}
+.hero:after{
+  content:"☾";position:absolute;right:30px;top:-48px;
+  font-size:180px;color:#ffffff0c;pointer-events:none;
+}
+.eyebrow{
+  color:#c8dfce;text-transform:uppercase;letter-spacing:2px;
+  font-size:10px;font-weight:800;
+}
+.hero h2{font-size:clamp(26px,4vw,38px);margin:14px 0 10px}
+.hero p{color:#d0e3d6;line-height:1.7;font-size:14px}
+.date{font-size:12px!important}
+.quote{
+  align-self:center;background:#ffffff10;border:1px solid #ffffff24;
+  padding:20px;border-radius:22px;backdrop-filter:blur(8px);
+}
+.quote strong{color:var(--gold);font-size:11px;letter-spacing:1px}
+.quote p{font-size:15px;color:white;margin-bottom:8px}
+.quote small{color:#c8dfce}
+.stats{
+  display:grid;grid-template-columns:repeat(3,1fr);
+  gap:15px;margin:20px 0;
+}
+.stat,.panel{
+  background:var(--card);border:1px solid var(--border);
+  border-radius:var(--radius);padding:21px;
+}
+.stat small{color:var(--muted);font-size:12px}
+.stat strong{display:block;font-size:29px;margin:10px 0 4px}
+.stat span{font-size:11px;color:var(--muted)}
+.layout{
+  display:grid;grid-template-columns:1.25fr 1fr;
+  gap:20px;align-items:start;
+}
+.panel h3{font-size:17px;margin:0 0 5px}
+.sub{font-size:12px;color:var(--muted);margin:0 0 20px}
+.prayer-list{display:grid;gap:10px}
+.prayer{
+  display:flex;align-items:center;gap:12px;
+  padding:13px;border:1px solid var(--border);
+  border-radius:15px;transition:.25s;background:white;
+}
+.prayer:hover{transform:translateY(-2px);border-color:#b9d9c5}
+.prayer.done{background:#edf7f0;border-color:#c2e3ce}
+.prayer input{
+  appearance:none;width:22px;height:22px;flex-shrink:0;
+  border:2px solid #cbd6cd;border-radius:7px;cursor:pointer;
+  transition:.2s;
+}
+.prayer input:checked{
+  background:var(--green2);border-color:var(--green2);
+}
+.prayer input:checked:after{
+  content:"✓";display:block;text-align:center;
+  color:white;font-size:15px;line-height:18px;
+}
+.prayer-info{flex:1}
+.prayer-info strong{display:block;font-size:13px}
+.prayer-info small{color:var(--muted);font-size:11px}
+.prayer-time{font-size:13px;font-weight:750}
+.progress-head{
+  display:flex;justify-content:space-between;gap:10px;
+  align-items:center;margin:20px 0 9px;font-size:12px;
+}
+.track{height:8px;background:#edf0eb;border-radius:10px;overflow:hidden}
+.fill{
+  height:100%;width:0%;border-radius:10px;
+  background:linear-gradient(90deg,#247d5b,#82c79a);
+  transition:width .65s cubic-bezier(.2,.8,.2,1);
+}
+.next-card{
+  background:#eff7f0;padding:20px;border-radius:18px;
+  margin-bottom:18px;
+}
+.next-card .big{font-size:29px;font-weight:800;margin:8px 0}
+.next-card small{color:var(--muted)}
+.week{
+  display:grid;grid-template-columns:repeat(7,1fr);
+  gap:6px;margin:17px 0;
+}
+.day{
+  text-align:center;padding:11px 1px;border-radius:12px;
+  background:#f5f7f3;font-size:10px;color:var(--muted);
+}
+.day strong{display:block;font-size:13px;margin:8px 0;color:var(--green)}
+.day.active{background:var(--green);color:white}
+.day.active strong{color:white}
+.day.full{background:#d9efdf;color:#1c6843}
+.day.full strong{color:#1c6843}
+.nav{
+  display:flex;gap:8px;flex-wrap:wrap;margin:22px 0;
+}
+.nav button,.secondary{
+  border:1px solid var(--border);background:white;
+  color:var(--green);padding:11px 16px;border-radius:12px;
+  font-size:12px;font-weight:700;
+}
+.nav button.active,.primary{
+  background:var(--green);color:white;border-color:var(--green);
+}
+.content{animation:appear .4s ease}
+@keyframes appear{
+  from{opacity:0;transform:translateY(8px)}
+  to{opacity:1;transform:translateY(0)}
+}
+.member{
+  display:flex;align-items:center;gap:12px;padding:13px 0;
+  border-bottom:1px solid var(--border);
+}
+.avatar{
+  width:40px;height:40px;border-radius:14px;
+  background:var(--mint);display:grid;place-items:center;font-weight:800;
+}
+.member div:nth-child(2){flex:1}
+.member strong{font-size:13px}
+.member small{display:block;color:var(--muted);font-size:11px;margin-top:4px}
+.badge{
+  background:var(--mint);padding:6px 9px;border-radius:20px;
+  font-size:11px;font-weight:800;
+}
+.auth-wrap{
+  min-height:100vh;display:grid;place-items:center;padding:20px;
+}
+.auth{
+  background:white;border:1px solid var(--border);border-radius:28px;
+  padding:30px;width:100%;max-width:390px;
+  box-shadow:0 20px 60px #0b30280c;
+}
+.auth h1{font-size:28px;margin-bottom:8px}
+.auth p{font-size:13px;color:var(--muted);line-height:1.6}
+.auth input{
+  display:block;width:100%;padding:14px;margin:12px 0;
+  border:1px solid var(--border);border-radius:12px;outline:none;
+}
+.auth input:focus{border-color:var(--green2)}
+.primary{padding:13px 17px;border-radius:12px;border:0;font-weight:750}
+.wide{width:100%;margin-top:8px}
+.error{color:#bb4242!important}
+footer{text-align:center;color:var(--muted);font-size:11px;padding:28px 0}
+@media(max-width:720px){
+  .app{padding:15px}
+  .hero{grid-template-columns:1fr;padding:23px}
+  .quote{max-width:100%}
+  .stats{gap:8px}
+  .stat{padding:13px}
+  .stat strong{font-size:23px}
+  .layout{grid-template-columns:1fr}
+  .topbar{margin-bottom:18px}
+}
+@media(prefers-reduced-motion:reduce){
+  *,*:before,*:after{animation:none!important;transition:none!important}
+}
+</style>
+</head>
+<body>
 
-      // =========================================================
-      // MASUKKAN FIREBASE CONFIG MILIK ANDA DI SINI
-      // =========================================================
-      const firebaseConfig = {
-        apiKey: "AIzaSyBYr0u7T2ZWTmeUzqM5bO30-EdEoS-29qo",
-        authDomain: "datagooddeeds.firebaseapp.com",
-        projectId: "datagooddeeds",
-        storageBucket: "datagooddeeds.firebasestorage.app",
-        messagingSenderId: "526925392145",
-        appId: "1:526925392145:web:b89f19a55765c4c6b584b0",
-        measurementId: "G-R5SRJKP3ZH",
-      };
+<section id="authScreen" class="auth-wrap">
+  <form class="auth" id="authForm">
+    <div class="logo">☾</div>
+    <h1>Sajdah<span style="color:#d9b66f">.</span></h1>
+    <p>Mulai perjalanan ibadahmu. Catat setiap langkah kecil menuju kebiasaan yang lebih baik.</p>
+    <input id="username" maxlength="24" required
+      placeholder="Masukkan username"
+      autocomplete="username" pattern="[A-Za-z0-9_. -]{3,24}">
+    <button class="primary wide" type="submit">Masuk / Daftar →</button>
+    <p id="authError" class="error"></p>
+    <p>Tanpa password. Gunakan username yang sama di browser ini untuk membuka akun lokalmu.</p>
+  </form>
+</section>
 
-      // Inisialisasi Firebase
-      const app = initializeApp(firebaseConfig);
-      const auth = getAuth(app);
-      const db = getFirestore(app);
-
-      // Variabel Global
-      let currentUser = null;
-      const todayStr = new Date().toISOString().split("T")[0];
-
-      // UI Elements
-      const authSection = document.getElementById("auth-section");
-      const appSection = document.getElementById("app-section");
-      const userNameSpan = document.getElementById("user-name");
-      const currentDateSpan = document.getElementById("current-date");
-
-      currentDateSpan.innerText = new Date().toLocaleDateString("id-ID", {
-        weekday: "long",
-        year: "numeric",
-        month: "long",
-        day: "numeric",
-      });
-
-      // Monitoring Perubahan Status Login
-      onAuthStateChanged(auth, (user) => {
-        if (user) {
-          currentUser = user;
-          userNameSpan.innerText = user.displayName || user.email;
-          authSection.classList.add("hidden");
-          appSection.classList.remove("hidden");
-          loadChecklistData();
-          loadGroupMonitoring();
-        } else {
-          currentUser = null;
-          authSection.classList.remove("hidden");
-          appSection.classList.add("hidden");
-        }
-      });
-
-      // Proses Login & Register
-      window.handleAuth = async (isRegister) => {
-        const name = document.getElementById("name-input").value;
-        const email = document.getElementById("email-input").value;
-        const password = document.getElementById("password-input").value;
-        const errorMsg = document.getElementById("auth-error");
-        errorMsg.innerText = "";
-
-        try {
-          if (isRegister) {
-            if (!name) {
-              errorMsg.innerText =
-                "Nama lengkap wajib diisi untuk pendaftaran!";
-              return;
-            }
-            const res = await createUserWithEmailAndPassword(
-              auth,
-              email,
-              password
-            );
-            await updateProfile(res.user, { displayName: name });
-          } else {
-            await signInWithEmailAndPassword(auth, email, password);
-          }
-        } catch (err) {
-          errorMsg.innerText = err.message;
-        }
-      };
-
-      window.handleLogout = () => signOut(auth);
-
-      // Memuat Data Sholat Mandiri Hari Ini
-      async function loadChecklistData() {
-        if (!currentUser) return;
-        const docRef = doc(db, "checklists", `${currentUser.uid}_${todayStr}`);
-        const docSnap = await getDoc(docRef);
-
-        const prayers = ["subuh", "dzuhur", "ashar", "maghrib", "isya"];
-        if (docSnap.exists()) {
-          const data = docSnap.data();
-          prayers.forEach((prayer) => {
-            document.getElementById(`chk-${prayer}`).checked = !!data[prayer];
-          });
-        } else {
-          prayers.forEach((prayer) => {
-            document.getElementById(`chk-${prayer}`).checked = false;
-          });
-        }
-      }
-
-      // Menyimpan Data Sholat Mandiri
-      window.saveChecklist = async () => {
-        if (!currentUser) return;
-        const prayers = ["subuh", "dzuhur", "ashar", "maghrib", "isya"];
-        const checklistData = {
-          uid: currentUser.uid,
-          userName: currentUser.displayName || currentUser.email,
-          date: todayStr,
-          updatedAt: new Date(),
-        };
-
-        let totalDone = 0;
-        prayers.forEach((prayer) => {
-          const isChecked = document.getElementById(`chk-${prayer}`).checked;
-          checklistData[prayer] = isChecked;
-          if (isChecked) totalDone++;
-        });
-
-        checklistData["totalDone"] = totalDone;
-
-        const docRef = doc(db, "checklists", `${currentUser.uid}_${todayStr}`);
-        await setDoc(docRef, checklistData, { merge: true });
-        alert("Catatan sholat berhasil disimpan!");
-        loadGroupMonitoring();
-      };
-
-      // Memuat Monitoring Progress Semua Anggota Hari Ini
-      async function loadGroupMonitoring() {
-        const groupListContainer = document.getElementById(
-          "group-monitoring-list"
-        );
-        groupListContainer.innerHTML =
-          '<p class="text-xs text-gray-400 text-center">Memuat data monitoring...</p>';
-
-        try {
-          const q = query(
-            collection(db, "checklists"),
-            where("date", "==", todayStr)
-          );
-          const querySnapshot = await getDocs(q);
-
-          if (querySnapshot.empty) {
-            groupListContainer.innerHTML =
-              '<p class="text-xs text-gray-400 text-center">Belum ada anggota lain yang mengisi checklist hari ini.</p>';
-            return;
-          }
-
-          groupListContainer.innerHTML = "";
-          querySnapshot.forEach((docSnap) => {
-            const data = docSnap.data();
-            const percent = Math.round((data.totalDone / 5) * 100);
-
-            const prayers = ["subuh", "dzuhur", "ashar", "maghrib", "isya"];
-            let badgesHtml = prayers
-              .map((p) => {
-                const done = data[p];
-                return `<span class="px-2 py-0.5 text-[10px] rounded font-medium ${
-                  done
-                    ? "bg-emerald-100 text-emerald-700"
-                    : "bg-slate-100 text-slate-400"
-                }">${p.toUpperCase()}</span>`;
-              })
-              .join(" ");
-
-            const card = `
-                        <div class="p-3 bg-slate-50 border rounded-lg space-y-2">
-                            <div class="flex justify-between items-center">
-                                <span class="font-bold text-sm text-slate-700">${
-                                  data.userName
-                                }</span>
-                                <span class="text-xs font-semibold px-2 py-0.5 rounded ${
-                                  percent === 100
-                                    ? "bg-emerald-500 text-white"
-                                    : "bg-amber-100 text-amber-700"
-                                }">${data.totalDone}/5 (${percent}%)</span>
-                            </div>
-                            <div class="flex gap-1 flex-wrap">${badgesHtml}</div>
-                        </div>
-                    `;
-            groupListContainer.innerHTML += card;
-          });
-        } catch (e) {
-          console.error("Error loading group stats: ", e);
-        }
-      }
-
-      // Navigasi Tab
-      window.switchTab = (tabName) => {
-        const tabChecklist = document.getElementById("tab-checklist");
-        const tabMonitoring = document.getElementById("tab-monitoring");
-        const btnTabChecklist = document.getElementById("btn-tab-checklist");
-        const btnTabMonitoring = document.getElementById("btn-tab-monitoring");
-
-        if (tabName === "checklist") {
-          tabChecklist.classList.remove("hidden");
-          tabMonitoring.classList.add("hidden");
-          btnTabChecklist.className =
-            "flex-1 py-2 font-semibold text-emerald-600 border-b-2 border-emerald-600 text-sm";
-          btnTabMonitoring.className =
-            "flex-1 py-2 font-semibold text-gray-400 border-b-2 border-transparent text-sm";
-        } else {
-          tabChecklist.classList.add("hidden");
-          tabMonitoring.classList.remove("hidden");
-          btnTabMonitoring.className =
-            "flex-1 py-2 font-semibold text-emerald-600 border-b-2 border-emerald-600 text-sm";
-          btnTabChecklist.className =
-            "flex-1 py-2 font-semibold text-gray-400 border-b-2 border-transparent text-sm";
-          loadGroupMonitoring();
-        }
-      };
-    </script>
-  </head>
-  <body class="bg-slate-100 min-h-screen flex flex-col items-center p-4">
-    <!-- Section Login / Register -->
-    <div
-      id="auth-section"
-      class="bg-white p-6 rounded-xl shadow-md w-full max-w-md mt-10"
-    >
-      <h1 class="text-2xl font-bold text-emerald-600 mb-2 text-center">
-        Checklist & Monitoring Sholat
-      </h1>
-      <p class="text-xs text-gray-500 text-center mb-6">
-        Masuk atau Buat Akun Baru
-      </p>
-
-      <div class="space-y-3">
-        <input
-          id="name-input"
-          type="text"
-          placeholder="Nama Lengkap (Wajib untuk daftar)"
-          class="w-full p-3 border rounded-lg text-sm focus:outline-emerald-500"
-        />
-        <input
-          id="email-input"
-          type="email"
-          placeholder="Email"
-          class="w-full p-3 border rounded-lg text-sm focus:outline-emerald-500"
-        />
-        <input
-          id="password-input"
-          type="password"
-          placeholder="Password"
-          class="w-full p-3 border rounded-lg text-sm focus:outline-emerald-500"
-        />
-        <p id="auth-error" class="text-red-500 text-xs"></p>
-
-        <div class="flex gap-2 pt-2">
-          <button
-            onclick="handleAuth(false)"
-            class="w-1/2 bg-emerald-600 text-white py-3 rounded-lg font-semibold hover:bg-emerald-700 transition"
-          >
-            Login
-          </button>
-          <button
-            onclick="handleAuth(true)"
-            class="w-1/2 bg-slate-200 text-slate-700 py-3 rounded-lg font-semibold hover:bg-slate-300 transition"
-          >
-            Daftar
-          </button>
-        </div>
-      </div>
+<main id="dashboard" class="app hidden">
+  <header class="topbar">
+    <div class="brand">
+      <div class="logo">☾</div>
+      <div><h1>Sajdah.</h1><p>YOUR DAILY PRAYER COMPANION</p></div>
     </div>
+    <button class="user-pill" id="logoutBtn">↪ Keluar</button>
+  </header>
 
-    <!-- Section Main Application -->
-    <div
-      id="app-section"
-      class="hidden bg-white p-6 rounded-xl shadow-md w-full max-w-md mt-4"
-    >
-      <!-- Header User -->
-      <div class="flex justify-between items-center mb-4 border-b pb-3">
-        <div>
-          <p
-            class="text-[10px] text-gray-400 uppercase tracking-wider font-semibold"
-          >
-            Pengguna Aktif
-          </p>
-          <p id="user-name" class="text-sm font-bold text-slate-700"></p>
-        </div>
-        <button
-          onclick="handleLogout()"
-          class="text-xs bg-red-50 text-red-600 px-3 py-1.5 rounded-lg font-medium hover:bg-red-100"
-        >
-          Keluar
-        </button>
-      </div>
-
-      <!-- Navigation Tab -->
-      <div class="flex border-b mb-4">
-        <button
-          id="btn-tab-checklist"
-          onclick="switchTab('checklist')"
-          class="flex-1 py-2 font-semibold text-emerald-600 border-b-2 border-emerald-600 text-sm"
-        >
-          Input Saya
-        </button>
-        <button
-          id="btn-tab-monitoring"
-          onclick="switchTab('monitoring')"
-          class="flex-1 py-2 font-semibold text-gray-400 border-b-2 border-transparent text-sm"
-        >
-          Monitoring Anggota
-        </button>
-      </div>
-
-      <!-- TAB 1: Checklist Saya -->
-      <div id="tab-checklist" class="space-y-4">
-        <div class="text-center">
-          <h2 class="text-lg font-bold text-slate-800">
-            Checklist Sholat Hari Ini
-          </h2>
-          <p id="current-date" class="text-xs text-emerald-600 font-medium"></p>
-        </div>
-
-        <div class="space-y-2.5">
-          <label
-            class="flex items-center justify-between p-3 bg-slate-50 rounded-lg hover:bg-emerald-50 cursor-pointer border transition"
-          >
-            <span class="font-medium text-slate-700 text-sm">Subuh</span>
-            <input
-              id="chk-subuh"
-              type="checkbox"
-              class="w-5 h-5 accent-emerald-600"
-            />
-          </label>
-          <label
-            class="flex items-center justify-between p-3 bg-slate-50 rounded-lg hover:bg-emerald-50 cursor-pointer border transition"
-          >
-            <span class="font-medium text-slate-700 text-sm">Dzuhur</span>
-            <input
-              id="chk-dzuhur"
-              type="checkbox"
-              class="w-5 h-5 accent-emerald-600"
-            />
-          </label>
-          <label
-            class="flex items-center justify-between p-3 bg-slate-50 rounded-lg hover:bg-emerald-50 cursor-pointer border transition"
-          >
-            <span class="font-medium text-slate-700 text-sm">Ashar</span>
-            <input
-              id="chk-ashar"
-              type="checkbox"
-              class="w-5 h-5 accent-emerald-600"
-            />
-          </label>
-          <label
-            class="flex items-center justify-between p-3 bg-slate-50 rounded-lg hover:bg-emerald-50 cursor-pointer border transition"
-          >
-            <span class="font-medium text-slate-700 text-sm">Maghrib</span>
-            <input
-              id="chk-maghrib"
-              type="checkbox"
-              class="w-5 h-5 accent-emerald-600"
-            />
-          </label>
-          <label
-            class="flex items-center justify-between p-3 bg-slate-50 rounded-lg hover:bg-emerald-50 cursor-pointer border transition"
-          >
-            <span class="font-medium text-slate-700 text-sm">Isya</span>
-            <input
-              id="chk-isya"
-              type="checkbox"
-              class="w-5 h-5 accent-emerald-600"
-            />
-          </label>
-        </div>
-
-        <button
-          onclick="saveChecklist()"
-          class="w-full bg-emerald-600 text-white py-3 rounded-lg font-semibold hover:bg-emerald-700 shadow-sm transition"
-        >
-          Simpan Progress
-        </button>
-      </div>
-
-      <!-- TAB 2: Monitoring Progress Anggota -->
-      <div id="tab-monitoring" class="hidden space-y-4">
-        <div class="text-center mb-2">
-          <h2 class="text-lg font-bold text-slate-800">
-            Monitoring Antar Anggota
-          </h2>
-          <p class="text-xs text-gray-500">
-            Progres sholat seluruh pengguna hari ini
-          </p>
-        </div>
-
-        <div id="group-monitoring-list" class="space-y-3">
-          <!-- Data dimasukkan secara otomatis via JS -->
-        </div>
-      </div>
+  <section class="hero">
+    <div>
+      <div class="eyebrow">✦ Perjalanan hari ini</div>
+      <h2 id="greeting">Assalamu'alaikum!</h2>
+      <p id="heroMessage">Satu langkah kecil, satu kebaikan setiap hari.</p>
+      <p class="date" id="todayLabel"></p>
     </div>
-  </body>
+    <div class="quote">
+      <strong>RENUNGAN HARI INI ✦</strong>
+      <p id="motivation"></p>
+      <small id="motivationSource"></small>
+    </div>
+  </section>
+
+  <section class="stats">
+    <div class="stat"><small>Salat hari ini</small><strong id="statDone">0/5</strong><span>Waktu tercatat</span></div>
+    <div class="stat"><small>Streak terbaik saat ini</small><strong id="statStreak">0 🔥</strong><span>Hari berturut-turut</span></div>
+    <div class="stat"><small>Konsistensi hari ini</small><strong id="statPercent">0%</strong><span>Target lima waktu</span></div>
+  </section>
+
+  <nav class="nav">
+    <button class="active" data-tab="home">✦ Dashboard</button>
+    <button data-tab="history">▦ Riwayat</button>
+    <button data-tab="members">◎ Monitoring</button>
+  </nav>
+
+  <section id="homeTab" class="content">
+    <div class="layout">
+      <section class="panel">
+        <h3>Checklist salat</h3>
+        <p class="sub">Tandai salat yang sudah kamu kerjakan.</p>
+        <div class="prayer-list" id="prayerList"></div>
+        <div class="progress-head"><span>Progress hari ini</span><strong id="progressLabel">0 dari 5</strong></div>
+        <div class="track"><div class="fill" id="progressFill"></div></div>
+        <p class="sub" id="progressMessage" style="margin-top:14px;margin-bottom:0">Mulai dengan satu langkah baik.</p>
+      </section>
+
+      <section class="panel">
+        <h3>Waktu salat</h3>
+        <p class="sub" id="locationLabel">Pasarkemis, Tangerang</p>
+        <div class="next-card">
+          <small id="nextCaption">Memuat waktu salat...</small>
+          <div class="big" id="nextPrayer">--:--:--</div>
+          <small id="countdown">Mengambil jadwal...</small>
+        </div>
+        <div id="scheduleList"></div>
+        <p class="sub" id="scheduleNote" style="margin:14px 0 0">
+          Jadwal perkiraan. Sesuaikan metode perhitungan dengan jadwal masjid setempat.
+        </p>
+      </section>
+    </div>
+    <section class="panel" style="margin-top:20px">
+      <h3>Perjalanan konsistensimu</h3>
+      <p class="sub">Aktivitas tujuh hari terakhir</p>
+      <div class="week" id="weekGrid"></div>
+    </section>
+  </section>
+
+  <section id="historyTab" class="panel content hidden">
+    <h3>Riwayat ibadah</h3>
+    <p class="sub">Catatan tujuh hari terakhir di perangkat ini.</p>
+    <div id="historyList"></div>
+  </section>
+
+  <section id="membersTab" class="panel content hidden">
+    <h3>Monitoring anggota</h3>
+    <p class="sub">Progress username yang tercatat di browser ini.</p>
+    <div id="memberList"></div>
+    <p class="sub" style="margin-top:16px">
+      Catatan: ini bukan monitoring online. Untuk berbagi data antaranggota dan perangkat, hubungkan database dengan autentikasi yang aman.
+    </p>
+  </section>
+  <footer>SAJDAH · Tumbuh dalam kebaikan, satu hari pada satu waktu.</footer>
+</main>
+
+<script>
+const PRAYERS = [
+  {id:"subuh",name:"Subuh",arabic:"Fajar menyingsing"},
+  {id:"dzuhur",name:"Dzuhur",arabic:"Tengah hari"},
+  {id:"ashar",name:"Ashar",arabic:"Menjelang sore"},
+  {id:"maghrib",name:"Maghrib",arabic:"Matahari terbenam"},
+  {id:"isya",name:"Isya",arabic:"Malam hari"}
+];
+
+const QUOTES = [
+  {text:"Sesungguhnya bersama kesulitan ada kemudahan.",source:"QS. Al-Insyirah: 6"},
+  {text:"Ingatlah, hanya dengan mengingat Allah hati menjadi tenteram.",source:"QS. Ar-Ra'd: 28"},
+  {text:"Jadikan salat sebagai tempat kembali saat dunia terasa melelahkan.",source:"Renungan harian"},
+  {text:"Amal yang paling dicintai Allah adalah yang dilakukan terus-menerus meskipun sedikit.",source:"HR. Bukhari dan Muslim"},
+  {text:"Jangan menunggu menjadi sempurna untuk memulai kebiasaan baik.",source:"Renungan harian"},
+  {text:"Mohonlah pertolongan dengan sabar dan salat.",source:"QS. Al-Baqarah: 45"},
+  {text:"Setiap hari adalah kesempatan baru untuk memperbaiki diri.",source:"Renungan harian"}
+];
+
+let username = "";
+let schedule = null;
+let scheduleDate = "";
+let timer = null;
+
+const $ = id => document.getElementById(id);
+const localDate = (date=new Date()) => {
+  const y=date.getFullYear();
+  const m=String(date.getMonth()+1).padStart(2,"0");
+  const d=String(date.getDate()).padStart(2,"0");
+  return `${y}-${m}-${d}`;
+};
+const userKey = name => "sajdah-user-" + name.toLowerCase();
+const getUser = name => {
+  try { return JSON.parse(localStorage.getItem(userKey(name))) || {}; }
+  catch { return {}; }
+};
+const saveUser = data => localStorage.setItem(userKey(username),JSON.stringify(data));
+const dayData = (date=localDate()) => getUser(username).days?.[date] || {};
+const countDone = data => PRAYERS.filter(p=>data[p.id]).length;
+const esc = value => String(value).replace(/[&<>"']/g,c=>({
+  "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+}[c]));
+const prettyDate = date => new Date(date+"T12:00:00").toLocaleDateString("id-ID",{
+  weekday:"long",day:"numeric",month:"long",year:"numeric"
+});
+
+$("authForm").addEventListener("submit",e=>{
+  e.preventDefault();
+  const name=$("username").value.trim();
+  if(!/^[A-Za-z0-9_. -]{3,24}$/.test(name)){
+    $("authError").textContent="Gunakan 3–24 karakter: huruf, angka, titik, atau garis.";
+    return;
+  }
+  username=name;
+  const data=getUser(username);
+  if(!data.createdAt){
+    data.createdAt=localDate();
+    data.days={};
+    saveUser(data);
+  }
+  localStorage.setItem("sajdah-last-user",username);
+  startApp();
+});
+
+$("logoutBtn").addEventListener("click",()=>{
+  clearInterval(timer);
+  username="";
+  $("dashboard").classList.add("hidden");
+  $("authScreen").classList.remove("hidden");
+});
+
+function startApp(){
+  $("authScreen").classList.add("hidden");
+  $("dashboard").classList.remove("hidden");
+  $("greeting").textContent="Assalamu'alaikum, "+username+"!";
+  const now=new Date();
+  $("todayLabel").textContent=prettyDate(localDate(now));
+  const quote=QUOTES[Math.floor((Date.UTC(now.getFullYear(),now.getMonth(),now.getDate())/86400000))%QUOTES.length];
+  $("motivation").textContent=quote.text;
+  $("motivationSource").textContent=quote.source;
+  renderPrayers();
+  renderDashboard();
+  loadSchedule();
+  clearInterval(timer);
+  timer=setInterval(updateCountdown,1000);
+}
+
+function renderPrayers(){
+  const data=dayData();
+  $("prayerList").innerHTML=PRAYERS.map(p=>`
+    <label class="prayer ${data[p.id]?"done":""}">
+      <input type="checkbox" data-prayer="${p.id}" ${data[p.id]?"checked":""}>
+      <span class="prayer-info"><strong>${p.name}</strong><small>${p.arabic}</small></span>
+      <span class="prayer-time" id="time-${p.id}">--:--</span>
+    </label>`).join("");
+
+  $("prayerList").querySelectorAll("input").forEach(input=>{
+    input.addEventListener("change",()=>{
+      const user=getUser(username);
+      user.days=user.days||{};
+      user.days[localDate()]=user.days[localDate()]||{};
+      user.days[localDate()][input.dataset.prayer]=input.checked;
+      user.days[localDate()].updatedAt=new Date().toISOString();
+      saveUser(user);
+      input.closest(".prayer").classList.toggle("done",input.checked);
+      renderDashboard();
+    });
+  });
+}
+
+function renderDashboard(){
+  const user=getUser(username);
+  const days=user.days||{};
+  const today=dayData();
+  const done=countDone(today);
+  $("statDone").textContent=done+"/5";
+  $("statPercent").textContent=Math.round(done/5*100)+"%";
+  $("progressLabel").textContent=done+" dari 5";
+  $("progressFill").style.width=(done/5*100)+"%";
+  $("progressMessage").textContent=done===5
+    ?"Alhamdulillah! Lima waktu sudah tercatat hari ini."
+    :done===0?"Awali harimu dengan satu langkah baik."
+    :"Terus jaga konsistensi. Kamu sudah mencatat "+done+" waktu.";
+
+  // Streak dihitung dari hari berturut-turut yang seluruh 5 salatnya tercatat.
+  // Hari ini yang belum selesai tidak langsung memutus streak sebelumnya.
+  let streak=0;
+  let cursor=new Date();
+  if(countDone(days[localDate(cursor)]||{})<5) cursor.setDate(cursor.getDate()-1);
+  while(streak<366){
+    if(countDone(days[localDate(cursor)]||{})!==5)break;
+    streak++;
+    cursor.setDate(cursor.getDate()-1);
+  }
+  $("statStreak").textContent=streak+" 🔥";
+
+  const week=[];
+  for(let i=6;i>=0;i--){
+    const d=new Date();
+    d.setDate(d.getDate()-i);
+    const key=localDate(d);
+    week.push({key,day:d.toLocaleDateString("id-ID",{weekday:"short"}),n:countDone(days[key]||{})});
+  }
+  $("weekGrid").innerHTML=week.map(item=>{
+    const todayClass=item.key===localDate()?"active":"";
+    const fullClass=item.n===5?"full":"";
+    return `<div class="day ${item.n===5?fullClass:todayClass}">
+      ${item.day}<strong>${item.n}/5</strong>${item.n===5?"✓":"·"}
+    </div>`;
+  }).join("");
+
+  $("historyList").innerHTML=week.slice().reverse().map(item=>`
+    <div class="member">
+      <div class="avatar">${item.n===5?"✓":"·"}</div>
+      <div><strong>${prettyDate(item.key)}</strong>
+      <small>${item.n===5?"Lima waktu tercatat":item.n+" dari 5 waktu tercatat"}</small></div>
+      <span class="badge">${Math.round(item.n/5*100)}%</span>
+    </div>`).join("");
+
+  // Monitoring lokal semua username yang pernah mendaftar di browser ini.
+  const users=[];
+  for(let i=0;i<localStorage.length;i++){
+    const key=localStorage.key(i);
+    if(!key||!key.startsWith("sajdah-user-"))continue;
+    try{
+      const data=JSON.parse(localStorage.getItem(key));
+      const name=key.slice("sajdah-user-".length);
+      users.push({name,data,n:countDone(data.days?.[localDate()]||{})});
+    }catch{}
+  }
+  users.sort((a,b)=>b.n-a.n);
+  $("memberList").innerHTML=users.map(u=>`
+    <div class="member">
+      <div class="avatar">${esc(u.name.charAt(0).toUpperCase())}</div>
+      <div><strong>${esc(u.name)}${u.name===username?" (Kamu)":""}</strong>
+      <small>${u.n} dari 5 salat hari ini</small></div>
+      <span class="badge">${Math.round(u.n/5*100)}%</span>
+    </div>`).join("")||"<p>Belum ada data anggota.</p>";
+}
+
+document.querySelectorAll("[data-tab]").forEach(button=>{
+  button.addEventListener("click",()=>{
+    document.querySelectorAll("[data-tab]").forEach(b=>b.classList.toggle("active",b===button));
+    ["home","history","members"].forEach(tab=>{
+      $(tab+"Tab").classList.toggle("hidden",tab!==button.dataset.tab);
+    });
+  });
+});
+
+async function loadSchedule(){
+  const today=localDate();
+  $("nextCaption").textContent="Jadwal hari ini";
+  $("scheduleList").innerHTML="<p class='sub'>Memuat jadwal salat...</p>";
+  try{
+    // Aladhan API: jadwal perkiraan Pasarkemis, Tangerang.
+    const url="https://api.aladhan.com/v1/timingsByCity/"+today+
+      "?city=Pasarkemis&country=Indonesia&method=20";
+    const response=await fetch(url);
+    if(!response.ok)throw new Error("Jadwal tidak tersedia");
+    const json=await response.json();
+    if(json.code!==200)throw new Error("Respons jadwal tidak valid");
+    schedule=json.data.timings;
+    scheduleDate=today;
+    const mapping=["Fajr","Dhuhr","Asr","Maghrib","Isha"];
+    PRAYERS.forEach((p,i)=>{
+      $( "time-"+p.id ).textContent=schedule[mapping[i]].slice(0,5);
+    });
+    $("scheduleList").innerHTML=PRAYERS.map((p,i)=>`
+      <div class="member">
+        <div class="avatar">${["☀","◉","◒","🌇","☾"][i]}</div>
+        <div><strong>${p.name}</strong><small>${p.arabic}</small></div>
+        <span class="prayer-time">${schedule[mapping[i]].slice(0,5)}</span>
+      </div>`).join("");
+    $("scheduleNote").textContent="Jadwal perkiraan Pasarkemis. Verifikasi dengan jadwal resmi masjid setempat.";
+    updateCountdown();
+  }catch(error){
+    $("scheduleList").innerHTML="<p class='sub'>Jadwal belum dapat dimuat. Periksa koneksi internet lalu muat ulang halaman.</p>";
+    $("nextPrayer").textContent="--:--:--";
+    $("countdown").textContent="Jadwal tidak tersedia";
+    $("scheduleNote").textContent="API jadwal membutuhkan koneksi internet.";
+  }
+}
+
+function updateCountdown(){
+  if(!schedule||scheduleDate!==localDate()){
+    if(username && scheduleDate && scheduleDate!==localDate())loadSchedule();
+    return;
+  }
+  const keys=["Fajr","Dhuhr","Asr","Maghrib","Isha"];
+  const now=new Date();
+  let upcoming=null;
+  for(const key of keys){
+    const parts=schedule[key].slice(0,5).split(":").map(Number);
+    const target=new Date();
+    target.setHours(parts[0],parts[1],0,0);
+    if(target>now){upcoming={key,target};break;}
+  }
+  if(!upcoming){
+    const parts=schedule.Fajr.slice(0,5).split(":").map(Number);
+    const target=new Date();
+    target.setDate(target.getDate()+1);
+    target.setHours(parts[0],parts[1],0,0);
+    upcoming={key:"Fajr",target};
+  }
+  const diff=Math.max(0,Math.floor((upcoming.target-now)/1000));
+  const h=String(Math.floor(diff/3600)).padStart(2,"0");
+  const m=String(Math.floor(diff%3600/60)).padStart(2,"0");
+  const s=String(diff%60).padStart(2,"0");
+  const names={Fajr:"Subuh",Dhuhr:"Dzuhur",Asr:"Ashar",Maghrib:"Maghrib",Isha:"Isya"};
+  $("nextCaption").textContent="Salat berikutnya · "+names[upcoming.key];
+  $("nextPrayer").textContent=upcoming.target.toLocaleTimeString("id-ID",{hour:"2-digit",minute:"2-digit",hour12:false});
+  $("countdown").textContent="Dimulai dalam "+h+":"+m+":"+s;
+}
+
+const previous=localStorage.getItem("sajdah-last-user");
+if(previous){
+  $("username").value=previous;
+}
+</script>
+</body>
 </html>
